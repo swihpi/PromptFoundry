@@ -6,9 +6,72 @@ PromptFoundry is a native macOS prompt-development workspace for people who know
 
 It sits between the first thought and the final AI task. Instead of asking users to become prompt engineers, it lets them describe what is on their mind and then helps turn that description into a dependable brief another AI system can understand and execute.
 
-> This is an informational showcase repository. It intentionally contains **no application source code, binaries, credentials, user data, or private prompt library**.
+> This is the official source repository. It contains **no developer API key, Codex token, user credentials, personal filesystem paths, prompt history, or private user data**. The ready-to-install DMG is published separately as a GitHub Release asset.
 
 ![PromptFoundry transforming a GarageBand Audio Unit idea into a professional prompt](assets/screenshots/01-garageband-workspace.png)
+
+## Download and install
+
+Download **[PromptFoundry 1.0.0 for Apple Silicon](https://github.com/swihpi/PromptFoundry/releases/latest/download/PromptFoundry-1.0.0-unsigned.dmg)** from the official GitHub release. The app requires macOS 14 or later and a local Codex installation through ChatGPT or the Codex CLI.
+
+1. Open the downloaded DMG.
+2. Drag **PromptFoundry** into the **Applications** shortcut shown in the DMG.
+3. Open PromptFoundry from the Applications folder.
+4. Complete the five-step setup assistant described below.
+
+### If macOS Gatekeeper blocks the app
+
+This community build is deliberately distributed without an Apple Developer ID signature and is not notarized. It has an ad-hoc local signature for bundle consistency, but macOS may still display a warning such as “Apple could not verify PromptFoundry is free of malware” on first launch. That warning reflects the missing Apple notarization, not a request for an API key or access to your Codex credentials.
+
+Only override Gatekeeper when the DMG came from this repository's official release and its checksum matches the value below:
+
+```text
+SHA-256: 378ac6370cd1e5c902dfc99d1645242269eea14ac53c3f76eccfb773744a84d9
+```
+
+The usual one-time opening process is:
+
+1. In Finder, open **Applications**.
+2. Control-click (or right-click) **PromptFoundry**, choose **Open**, and then choose **Open** again in the confirmation dialog.
+3. If macOS still blocks it, open **System Settings → Privacy & Security**.
+4. Scroll to the **Security** section, find the message about PromptFoundry, and click **Open Anyway**.
+5. Authenticate with the Mac user's password or Touch ID if macOS asks, then confirm **Open**.
+
+Do not disable Gatekeeper globally. The per-app **Open** or **Open Anyway** action is the narrow, reversible exception intended for a specific app the user has independently verified.
+
+## First-launch setup
+
+PromptFoundry does not ship with somebody else's API key or account. The setup assistant connects the app to the Codex installation and authentication that already belong to the user of the Mac. It also establishes a normal projects folder so Codex handoffs do not interrupt the workflow with an unexplained directory picker.
+
+### 1. Review the local-first privacy model
+
+The welcome step explains the operating boundary before anything is configured: Codex owns authentication, prompt history stays local, and every execution handoff is reviewed before it is sent.
+
+![PromptFoundry setup welcome and privacy explanation](Docs/screenshots/setup-01-welcome.png)
+
+### 2. Locate the Codex CLI
+
+PromptFoundry checks the standard ChatGPT and Codex application locations plus common command-line installation paths. If automatic detection is not suitable, **Locate Codex…** lets the user choose the executable. Only this executable path is saved; PromptFoundry does not import a Codex configuration or credential file.
+
+![PromptFoundry automatically detecting the local Codex CLI](Docs/screenshots/setup-02-find-codex.png)
+
+### 3. Verify the user's own Codex connection
+
+The connection check asks the selected CLI whether it is ready. If sign-in is needed, **Start Codex Sign-In** launches the Codex-owned authentication flow. Credentials are entered into and stored by Codex, not by PromptFoundry.
+
+![PromptFoundry verifying the user-owned Codex connection](Docs/screenshots/setup-03-connect-codex.png)
+
+### 4. Choose the projects folder
+
+The default is `~/Documents/PromptFoundry Projects`, or the user can choose an existing folder. This folder is the default workspace for generated Codex tasks; it is not the Codex configuration folder. PromptFoundry still shows the exact working directory in every handoff review.
+
+![PromptFoundry choosing a default Codex projects folder](Docs/screenshots/setup-04-projects-folder.png)
+
+### 5. Confirm the setup
+
+The final step summarizes the executable, connection, projects folder, and local prompt storage before creating the folder and completing setup. Every choice can later be changed in PromptFoundry Settings.
+
+![PromptFoundry setup summary before completion](Docs/screenshots/setup-05-ready.png)
 
 ## Why PromptFoundry exists
 
@@ -239,7 +302,27 @@ That example illustrates the central product idea: preserve the creative request
 
 ## Project status
 
-PromptFoundry is currently presented here as an informational product showcase. This repository is not a source distribution and does not provide an installer or public release artifact. The documentation focuses on the product problem, user workflow, architectural approach, privacy model, and verified interface rather than publishing implementation files.
+PromptFoundry 1.0.0 is available as an unsigned, unnotarized Apple Silicon DMG in [GitHub Releases](https://github.com/swihpi/PromptFoundry/releases). This repository also publishes the Swift source, verification executable, Codex integration probe, packaging scripts, installation notes, and privacy-safe product documentation.
+
+The first public release has been built as a native SwiftUI/SwiftData application and the DMG has passed `hdiutil verify`. Because the release intentionally does not use an Apple Developer ID, users should expect the one-time Gatekeeper process documented above. The release is independent software and uses the user's own local Codex installation and authentication.
+
+## Build from source
+
+The package targets Apple Silicon Macs running macOS 14 or later. A current Apple Swift toolchain with SwiftUI and SwiftData support is required. The manifest uses the toolchain's normal macro discovery when available; a custom SwiftData macro library can be supplied with the `PROMPTFOUNDRY_SWIFTDATA_PLUGIN` environment variable when a command-line-only setup needs it.
+
+```bash
+git clone https://github.com/swihpi/PromptFoundry.git
+cd PromptFoundry
+./script/build_and_run.sh --build-only
+```
+
+The staged app is written to `dist/PromptFoundry.app`. To build the same unsigned DMG layout used for the public release:
+
+```bash
+./script/build_dmg.sh
+```
+
+The build scripts use an ad-hoc signature only. They do not require or reference an Apple Developer account, certificate, provisioning profile, personal username, API credential, or Codex token. PromptFoundry discovers Codex on first launch and keeps the selected executable and projects-folder preferences on the local Mac.
 
 ## Independence and trademarks
 

@@ -1,0 +1,10 @@
+PromptFoundry 1.0
+
+1. Drag PromptFoundry to Applications.
+2. Open PromptFoundry from Finder.
+3. Because this community build is unsigned and unnotarized, macOS may block the first launch. If it does, Control-click PromptFoundry, choose Open, and confirm Open.
+4. Complete the first-launch assistant to locate the Codex CLI, verify your own Codex account, and choose a projects folder.
+
+PromptFoundry contains no developer API key, Codex token, account, or personal computer path. Codex authentication is owned by the Codex CLI installed on your Mac. PromptFoundry continues to use the local Codex app-server integration.
+
+This build is independent software and is not affiliated with or endorsed by OpenAI.
