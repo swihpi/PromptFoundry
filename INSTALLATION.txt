@@ -1,4 +1,4 @@
-PromptFoundry 1.0
+PromptFoundry 1.0.1
 
 1. Drag PromptFoundry to Applications.
 2. Open PromptFoundry from Finder.

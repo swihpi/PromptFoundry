@@ -251,11 +251,15 @@ public protocol CodexExecutableLocating {
 public struct DefaultCodexExecutableLocator: CodexExecutableLocating {
     public init() {}
     public func locate() -> URL? {
+        let defaults = UserDefaults.standard
         var candidates: [String] = []
-        if let configured = UserDefaults.standard.string(forKey: "codexExecutablePath"), !configured.isEmpty {
+        let configured = defaults.string(forKey: "codexExecutablePath")
+        if let configured, !configured.isEmpty {
             candidates.append(configured)
         }
         candidates += [
+            "/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex",
+            "/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex",
             "/Applications/ChatGPT.app/Contents/Resources/codex",
             "/Applications/Codex.app/Contents/Resources/codex",
             "/opt/homebrew/bin/codex",
@@ -264,7 +268,13 @@ public struct DefaultCodexExecutableLocator: CodexExecutableLocating {
         if let path = ProcessInfo.processInfo.environment["PATH"] {
             candidates += path.split(separator: ":").map { String($0) + "/codex" }
         }
-        return candidates.first(where: { FileManager.default.isExecutableFile(atPath: $0) }).map(URL.init(fileURLWithPath:))
+        guard let resolved = candidates.first(where: { FileManager.default.isExecutableFile(atPath: $0) }) else {
+            return nil
+        }
+        if configured != resolved {
+            defaults.set(resolved, forKey: "codexExecutablePath")
+        }
+        return URL(fileURLWithPath: resolved)
     }
 }
 
