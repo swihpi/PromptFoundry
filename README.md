@@ -342,6 +342,10 @@ Complete recall matters because the professional prompt alone is not the whole d
 
 The V2 screenshots show a local macOS reading-list app brief. A rough idea is expanded into requirements, scope boundaries, persistence, export behavior and verification. The clarification and comparison captures show how to review and refine that starting brief.
 
+![PromptFoundry V2 turning a reading-list app idea into a professional prompt](Docs/screenshots/v2/01-editorial-workspace.png)
+
+### Historical V1 example — GarageBand
+
 The original V1 screenshots below are retained as a historical GarageBand example. The rough idea communicates the desired product, reverb focus, visual ambition, dials, presets, and broad professional inspiration—but it does not spell out many engineering and delivery details that determine whether the result will be credible.
 
 ![Historical V1 GarageBand workspace](assets/screenshots/01-garageband-workspace.png)
