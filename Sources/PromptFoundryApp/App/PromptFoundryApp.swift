@@ -32,11 +32,11 @@ struct PromptFoundryApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("PromptFoundry", id: "main") {
+        WindowGroup("PromptFoundry V2", id: "main") {
             WorkspaceRootView(viewModel: appModel.workspace)
                 .environmentObject(appModel)
                 .frame(minWidth: 1_100, minHeight: 680)
-                .preferredColorScheme(preferredColorScheme)
+                .preferredColorScheme(.dark)
         }
         .defaultSize(width: 1_520, height: 900)
         .commands { PromptFoundryCommands(viewModel: appModel.workspace) }
@@ -44,7 +44,7 @@ struct PromptFoundryApp: App {
         Settings {
             SettingsView()
                 .environmentObject(appModel)
-                .preferredColorScheme(preferredColorScheme)
+                .preferredColorScheme(.dark)
         }
     }
 

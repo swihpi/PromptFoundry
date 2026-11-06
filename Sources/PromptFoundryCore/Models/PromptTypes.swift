@@ -227,7 +227,7 @@ public enum PromptDepth {
         case 3...4:
             return "Produce a focused professional prompt with clear scope, requirements, output, and verification where relevant."
         case 5:
-            return "Produce a comprehensive, self-contained professional prompt. Cover the objective, context, deliverables, material functional and non-functional requirements, constraints, scope boundaries, assumptions, risks, output format, verification, and definition of done wherever relevant. For a substantive task, aim for roughly 500–900 words; never pad a simple task, but do not omit execution-critical detail."
+            return "Produce a comprehensive, self-contained professional prompt. Cover the objective, context, deliverables, material functional and non-functional requirements, constraints, scope boundaries, assumptions, risks, output format, verification, and definition of done wherever relevant. For a substantive task, roughly 500–900 words may be appropriate, but relevance and coverage take priority over word count. Never pad a simple task or invent scope; do not omit execution-critical detail."
         case 6:
             return "Produce a comprehensive prompt with extra operational detail, explicit acceptance criteria, edge cases, and verification evidence."
         case 7...8:

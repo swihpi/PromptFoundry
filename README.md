@@ -1,4 +1,4 @@
-# PromptFoundry
+# PromptFoundry V2
 
 **Turn a rough idea into a complete, professional prompt—and carry it into Codex without rebuilding the brief by hand.**
 
@@ -8,15 +8,24 @@ It sits between the first thought and the final AI task. Instead of asking users
 
 > This is the official source repository. It contains **no developer API key, Codex token, user credentials, personal filesystem paths, prompt history, or private user data**. The ready-to-install DMG is published separately as a GitHub Release asset.
 
-![PromptFoundry transforming a GarageBand Audio Unit idea into a professional prompt](assets/screenshots/01-garageband-workspace.png)
+![PromptFoundry V2 editorial workspace with a reading-list app brief](Docs/screenshots/v2/01-editorial-workspace.png)
+
+**Version 2.0.0 is available for macOS.** V2 brings a new dark editorial workspace, optional clarification answers, explicit file-content context, safer generation, and version comparison. [Read the changelog](CHANGELOG.md).
 
 ## Download and install
 
-Download **[PromptFoundry 1.0.0 for Apple Silicon](https://github.com/swihpi/PromptFoundry/releases/latest/download/PromptFoundry-1.0.0-unsigned.dmg)** from the official GitHub release. The app requires macOS 14 or later and a local Codex installation through ChatGPT or the Codex CLI.
+Download **[PromptFoundry V2 — macOS DMG](https://github.com/swihpi/PromptFoundry/releases/download/v2.0.0/PromptFoundry-V2-2.0.0-unsigned.dmg)** from the official GitHub release. The app requires an Apple Silicon Mac running macOS 14 or later and a local Codex installation through ChatGPT or the Codex CLI.
+
+| Version | Installer | Release notes |
+| --- | --- | --- |
+| **V2 · 2.0.0 — current** | [Download V2 DMG](https://github.com/swihpi/PromptFoundry/releases/download/v2.0.0/PromptFoundry-V2-2.0.0-unsigned.dmg) | [V2 release](https://github.com/swihpi/PromptFoundry/releases/tag/v2.0.0) |
+| V1 · 1.0.0 — previous | [Download original V1 DMG](https://github.com/swihpi/PromptFoundry/releases/download/v1.0.0/PromptFoundry-1.0.0-unsigned.dmg) | [V1 release](https://github.com/swihpi/PromptFoundry/releases/tag/v1.0.0) |
+
+The V1 release and installer are preserved at their original URLs. V2 installs as **PromptFoundry-V2.app**, so both versions can coexist. On its first launch, V2 copies an existing V1 prompt library into a separate V2 store without saving changes to the V1 store. Later edits are independent; the two libraries do not synchronize. V2 has separate preferences and optional API-key storage, while its default provider uses the user's existing Codex authentication.
 
 1. Open the downloaded DMG.
-2. Drag **PromptFoundry** into the **Applications** shortcut shown in the DMG.
-3. Open PromptFoundry from the Applications folder.
+2. Drag **PromptFoundry-V2** into the **Applications** shortcut shown in the DMG.
+3. Open PromptFoundry-V2 from the Applications folder.
 4. Complete the five-step setup assistant described below.
 
 ### If macOS Gatekeeper blocks the app
@@ -26,20 +35,57 @@ This community build is deliberately distributed without an Apple Developer ID s
 Only override Gatekeeper when the DMG came from this repository's official release and its checksum matches the value below:
 
 ```text
-SHA-256: 378ac6370cd1e5c902dfc99d1645242269eea14ac53c3f76eccfb773744a84d9
+V2 SHA-256: d9845670734b1573989fd8c853813636ccfa8952f329f08b335beb85b9804b36
+V1 SHA-256: 378ac6370cd1e5c902dfc99d1645242269eea14ac53c3f76eccfb773744a84d9
 ```
 
 The usual one-time opening process is:
 
 1. In Finder, open **Applications**.
-2. Control-click (or right-click) **PromptFoundry**, choose **Open**, and then choose **Open** again in the confirmation dialog.
+2. Control-click (or right-click) **PromptFoundry-V2**, choose **Open**, and then choose **Open** again if macOS offers that confirmation.
 3. If macOS still blocks it, open **System Settings → Privacy & Security**.
-4. Scroll to the **Security** section, find the message about PromptFoundry, and click **Open Anyway**.
+4. Scroll to the **Security** section, find the message about PromptFoundry-V2, and click **Open Anyway**. On recent macOS versions this may be the required route after the first blocked launch.
 5. Authenticate with the Mac user's password or Touch ID if macOS asks, then confirm **Open**.
 
 Do not disable Gatekeeper globally. The per-app **Open** or **Open Anyway** action is the narrow, reversible exception intended for a specific app the user has independently verified.
 
+## What is new in V2
+
+### A workspace designed around reading and writing
+
+The dark editorial interface replaces the old sidebar-heavy composition with horizontal library navigation, recent prompt shortcuts, larger proportional typography, and aligned text editors. The library panel still provides search, tags, favorites, recently used items, sorting, rename, duplication, export, and deletion. Prompt depth sits below the rough idea, and the professional prompt has separate editing, shaping, and handoff actions.
+
+### Answer the gaps before refining again
+
+**Answer & Refine** turns questions and missing information into optional answer fields. Answers are appended to Additional Context and used by **Apply Answers & Improve**, so the next revision is informed by the user's facts rather than guesses. This keeps the quick first-draft workflow while giving users a direct route to a more accurate brief.
+
+![Optional answers in PromptFoundry V2](Docs/screenshots/v2/02-answer-and-refine.png)
+
+### Decide what a referenced file contributes
+
+Files remain references by default: refinement receives their names, not their contents. Selecting **Use contents** explicitly includes supported UTF-8 text, Markdown, or source-file content in the next refinement request. The current limits are 64 KB per file and 256 KB for combined selected context. Unsupported or oversized files produce an error rather than being silently treated as understood. Content selections reset when switching prompts. The Codex handoff includes referenced file paths in the complete review so users can see exactly what is sent.
+
+### Preserve the last completed result
+
+Generation streams into a temporary preview while the previous completed prompt remains saved. A failure or cancellation preserves that baseline; a successful replacement keeps the previous version. Copy and handoff actions are unavailable during generation to avoid confusing the temporary preview with the completed result.
+
+### Understand a revision before restoring it
+
+The Versions window compares a selected version with the current prompt. Red lines show removed text; blue lines show additions. Users can turn comparison off for a plain preview or restore a previous version, preserving the result they are replacing.
+
+![Line comparison in the V2 Versions window](Docs/screenshots/v2/03-version-comparison.png)
+
+### Review the correct settings for each Codex route
+
+**Run in Codex** sends a prompt and working directory to the desktop app; the model, reasoning, and permissions are selected inside Codex before submission. **Create Codex Task** uses the model, reasoning, and access settings shown in its own review. The interface now separates these routes and describes a desktop handoff as dispatched rather than claiming confirmed creation inside another app.
+
+![V2 desktop handoff review with a generic demonstration folder](Docs/screenshots/v2/04-codex-handoff.png)
+
+The handoff screenshot uses `/tmp/PromptFoundry-Example` as a generic demonstration path. Each user chooses or automatically creates a project directory on their own Mac.
+
 ## First-launch setup
+
+The setup screenshots below document the shared five-step flow retained from V1; the V2 workspace screenshots above show the current interface. Current Codex installations may use a newer executable location than the one shown in the historical setup captures.
 
 PromptFoundry does not ship with somebody else's API key or account. The setup assistant connects the app to the Codex installation and authentication that already belong to the user of the Mac. It also establishes a normal projects folder so Codex handoffs do not interrupt the workflow with an unexplained directory picker.
 
@@ -133,7 +179,7 @@ The left workspace is deliberately approachable: users can begin with ordinary l
 - **Prompt Depth** — controls completeness from 1 (essential) to 10 (exhaustive), with 5 as the comprehensive default.
 - **Rough Idea editor** — a large multiline editor with word and character counts.
 - **Additional Context** — optional background, constraints, audience, environment, or desired tone.
-- **Files** — references relevant local files without turning their paths into shell commands.
+- **Files** — references local files, with explicit **Use contents** selection for supported text during refinement.
 - **Tags** — organizes prompts for later search and reuse.
 - **Refinement Model** — friendly Fast, Balanced, and Deep tiers plus the underlying model and supported reasoning effort.
 - **Paste, Clear, and Generate Prompt** — focused controls with keyboard-friendly behavior.
@@ -160,13 +206,14 @@ The generated prompt remains a real editor—not a locked preview. This is impor
 
 - **Copy, Save, and Export** to Markdown or plain text.
 - **Create Codex Task** for an app-server-backed task using the reviewed task settings.
-- **Run in Codex** to open a fresh Codex-owned chat with the complete prompt and working directory.
+- **Run in Codex** to send the complete prompt and working directory to a new desktop draft for review and submission in Codex.
 - **Regenerate** when a new complete draft is appropriate.
 - **Improve** to strengthen clarity and execution detail.
 - **Shorter** to reduce length without losing the essential contract.
 - **More Detail** to expand relevant implementation and verification guidance.
 - **Keep My Voice** to protect important wording and tone.
-- **Versions** to revisit earlier useful results.
+- **Versions** to compare changes, preview and restore earlier results.
+- **Answer & Refine** to answer questions or missing information and use those facts in the next revision.
 - Expandable sections for **What Was Added**, **Assumptions Made**, **Missing Information**, **Questions Worth Answering**, and **Potential Risks or Ambiguities**.
 - **Codex Execution** controls for model, reasoning effort, and Read Only, Workspace Write, or Full Access file permissions where supported.
 
@@ -174,21 +221,21 @@ The expandable analysis sections make the transformation auditable. Rather than 
 
 ## Review before Codex
 
-PromptFoundry shows a dedicated handoff review rather than silently running a prompt against an arbitrary directory. The review presents the complete, scrollable prompt alongside the recommended model, reasoning effort, file access, and automatically selected working directory.
+PromptFoundry shows a dedicated handoff review before sending a prompt to a working directory. Both routes show the complete, scrollable prompt and chosen folder. Create Codex Task also shows the applicable model, reasoning effort and file access. Desktop handoff explains that these settings are selected inside Codex.
 
 This is the final checkpoint between prompt preparation and execution. It lets the user confirm not only *what* Codex will receive, but also *where* the task will run and what level of access it may have. Recommendations are applied as sensible defaults, while remaining visible and changeable instead of becoming hidden automation.
 
-![Privacy-safe Codex handoff review for the GarageBand example](assets/screenshots/02-codex-handoff-review.png)
-
-The working-directory field is intentionally kept outside the published frame so no personal local path is exposed.
+The V2 handoff screenshot appears above. The [original V1 review screenshot](assets/screenshots/02-codex-handoff-review.png) is retained for historical reference.
 
 ## From PromptFoundry to Codex
 
-The final handoff opens the professional prompt in a new Codex chat together with its reviewed working directory. The user no longer has to copy a long prompt, create a separate chat, relocate the project folder, and reconstruct the context manually.
+Desktop handoff requests a new Codex draft with the professional prompt and reviewed working directory. The user checks the draft and execution settings in Codex before submission. PromptFoundry reports that the handoff was sent; acceptance of a macOS URL request alone cannot confirm the destination's final state.
 
 Codex Desktop owns the new chat, which avoids cross-application task ownership conflicts and keeps subsequent work in the expected Codex interface. The prompt remains visible before submission, so the transition is efficient without becoming opaque. The Codex sidebar is intentionally excluded from the screenshot below to protect unrelated task information.
 
-![Professional prompt opened in a new Codex chat](assets/screenshots/03-codex-injected-prompt.png)
+The following is the historical V1 GarageBand example, retained as documentation of the original handoff. It is not a fresh V2 verification screenshot.
+
+![Historical V1 professional prompt opened in Codex](assets/screenshots/03-codex-injected-prompt.png)
 
 ## How the backend works
 
@@ -215,7 +262,7 @@ For the desktop handoff, PromptFoundry carries the complete prompt and reviewed 
 
 The separate **Create Codex Task** path supports reviewed task creation with the selected model, reasoning, working directory, sandbox, and approval policy. A desktop-created chat uses the execution settings currently selected inside Codex.
 
-This design also keeps failure honest. If Codex is unavailable, not authenticated, or cannot accept the handoff, PromptFoundry keeps the generated prompt recoverable and reports the problem instead of displaying a fake success state.
+Connection and app-server errors are reported while the generated prompt remains recoverable. Desktop URL handoff reports dispatch to macOS; the user confirms the resulting draft in Codex. It does not provide a destination-side acknowledgment.
 
 ### Local-first data handling
 
@@ -227,7 +274,7 @@ Prompt work can contain unpublished product ideas, client context, research ques
 - Libraries can be exported, backed up, imported, and restored.
 - Optional API credentials are stored in macOS Keychain with device-only accessibility—not in source, UserDefaults, SwiftData, logs, or exports.
 - Complete user prompts are not logged by default.
-- There are no accounts, analytics, advertising, or cloud synchronization in the first version.
+- There are no PromptFoundry accounts, analytics, advertising, or cloud synchronization in V1 or V2. Refinement still uses the selected external AI provider.
 
 Local-first does not mean locked in: users can export individual prompts or back up and restore the wider library. Exported prompt content is user-controlled, while sensitive Keychain material and security-scoped bookmarks are excluded from library exports.
 
@@ -237,11 +284,11 @@ PromptFoundry’s native Settings window is organized into focused areas. Defaul
 
 ### General
 
-General settings control how PromptFoundry fits into everyday Mac use. Appearance follows the system by default, automatic saving protects meaningful edits, and history tools make it possible to move or restore the local library deliberately.
+General settings control how PromptFoundry fits into everyday Mac use. V2 uses the dark editorial theme, automatic saving protects meaningful edits, and history tools make it possible to move or restore the local library deliberately.
 
 - Default target.
 - Automatic saving for meaningful edits.
-- System, Light, or Dark appearance.
+- Fixed dark editorial appearance in V2.
 - Local database location.
 - Library export, import, and strongly confirmed deletion.
 
@@ -280,7 +327,6 @@ The keyboard shortcuts cover the complete core workflow—from a new rough idea 
 - `⇧⌘↩` — Run in Codex
 - `⌘S` — Save
 - `⇧⌘C` — Copy Professional Prompt
-- `⌘F` — Search History
 - `⌘,` — Settings
 - `Esc` — stop generation or dismiss the active sheet
 
@@ -288,13 +334,17 @@ The keyboard shortcuts cover the complete core workflow—from a new rough idea 
 
 Each saved prompt can retain the original idea, professional prompt, context, target, task type, depth, models, reasoning, sandbox choice, assumptions, additions, missing information, questions, risks, tags, favorite status, dates, attachments, and previous versions.
 
-The history sidebar supports search, complete workspace recall, favorites, recently used items, sorting, duplication, rename, export, and deletion. This turns prompt preparation from a disposable chat step into a reusable professional library.
+The library panel supports search, complete workspace recall, favorites, recently used items, sorting, duplication, rename, export, and deletion. Recent prompt shortcuts also appear above the two editors. This turns prompt preparation from a disposable chat step into a reusable professional library.
 
 Complete recall matters because the professional prompt alone is not the whole decision record. Reopening an item also restores the rough idea and the settings that shaped it, making it easier to understand why a prompt looks the way it does. Version preservation lets users experiment with a shorter or deeper result without silently destroying an earlier draft that may still be valuable.
 
 ## Example shown here
 
-The screenshots demonstrate a brief request for an original macOS Audio Unit reverb plugin for GarageBand. The rough idea communicates the desired product, reverb focus, visual ambition, dials, presets, and broad professional inspiration—but it does not spell out many engineering and delivery details that determine whether the result will be credible.
+The V2 screenshots show a local macOS reading-list app brief. A rough idea is expanded into requirements, scope boundaries, persistence, export behavior and verification. The clarification and comparison captures show how to review and refine that starting brief.
+
+The original V1 screenshots below are retained as a historical GarageBand example. The rough idea communicates the desired product, reverb focus, visual ambition, dials, presets, and broad professional inspiration—but it does not spell out many engineering and delivery details that determine whether the result will be credible.
+
+![Historical V1 GarageBand workspace](assets/screenshots/01-garageband-workspace.png)
 
 At default depth 5, PromptFoundry expands that idea into a 979-word implementation brief covering distinct reverb modes, genuine DSP behavior, real-time audio constraints, interface expectations, originality boundaries, scope, testing, Audio Unit validation, direct GarageBand verification, and a definition of done. It also makes clear that controls must be functional and that compilation alone is not evidence of a finished plugin.
 
@@ -302,9 +352,9 @@ That example illustrates the central product idea: preserve the creative request
 
 ## Project status
 
-PromptFoundry 1.0.0 is available as an unsigned, unnotarized Apple Silicon DMG in [GitHub Releases](https://github.com/swihpi/PromptFoundry/releases). This repository also publishes the Swift source, verification executable, Codex integration probe, packaging scripts, installation notes, and privacy-safe product documentation.
+PromptFoundry V2 2.0.0 is the current unsigned, unnotarized Apple Silicon DMG in [GitHub Releases](https://github.com/swihpi/PromptFoundry/releases). The original V1 1.0.0 installer remains downloadable. This repository publishes the V2 source, verification utilities, Codex integration probe, packaging scripts, installation notes, changelog and selected screenshots.
 
-The first public release has been built as a native SwiftUI/SwiftData application and the DMG has passed `hdiutil verify`. Because the release intentionally does not use an Apple Developer ID, users should expect the one-time Gatekeeper process documented above. The release is independent software and uses the user's own local Codex installation and authentication.
+V2 was built and checked during implementation, including the existing verification suite, focused workflow checks, live Codex refinement, and installed-interface review. The aligned-editor update and this publication pass did not rerun application tests. Release packaging is checked separately. Desktop dispatch was accepted by macOS, but visual confirmation inside Codex was unavailable because computer access to that app was blocked. See [CHANGELOG.md](CHANGELOG.md) for the release boundaries.
 
 ## Build from source
 
@@ -316,7 +366,7 @@ cd PromptFoundry
 ./script/build_and_run.sh --build-only
 ```
 
-The staged app is written to `dist/PromptFoundry.app`. To build the same unsigned DMG layout used for the public release:
+The staged app is written to `dist/PromptFoundry-V2.app`. To build the same unsigned DMG layout used for the public release:
 
 ```bash
 ./script/build_dmg.sh

@@ -2,8 +2,8 @@
 set -euo pipefail
 
 MODE="${1:-run}"
-APP_NAME="PromptFoundry"
-BUNDLE_ID="app.promptfoundry.PromptFoundry"
+APP_NAME="PromptFoundry-V2"
+BUNDLE_ID="app.promptfoundry.PromptFoundryV2"
 MIN_SYSTEM_VERSION="14.0"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -26,7 +26,7 @@ swift build --disable-sandbox -c release \
   -Xswiftc "$ROOT_DIR=PromptFoundry" \
   -Xswiftc -file-prefix-map \
   -Xswiftc "$ROOT_DIR=PromptFoundry"
-BUILD_BINARY="$(swift build --disable-sandbox -c release --show-bin-path)/$APP_NAME"
+BUILD_BINARY="$(swift build --disable-sandbox -c release --show-bin-path)/PromptFoundry"
 
 rm -rf "$APP_BUNDLE"
 mkdir -p "$APP_MACOS" "$APP_RESOURCES"
@@ -58,11 +58,11 @@ cat >"$INFO_PLIST" <<PLIST
   <key>CFBundleExecutable</key><string>$APP_NAME</string>
   <key>CFBundleIdentifier</key><string>$BUNDLE_ID</string>
   <key>CFBundleName</key><string>$APP_NAME</string>
-  <key>CFBundleDisplayName</key><string>PromptFoundry</string>
+  <key>CFBundleDisplayName</key><string>PromptFoundry-V2</string>
   <key>CFBundleIconFile</key><string>PromptFoundry</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>1.0.1</string>
-  <key>CFBundleVersion</key><string>2</string>
+  <key>CFBundleShortVersionString</key><string>2.0.0</string>
+  <key>CFBundleVersion</key><string>20</string>
   <key>LSMinimumSystemVersion</key><string>$MIN_SYSTEM_VERSION</string>
   <key>NSPrincipalClass</key><string>NSApplication</string>
   <key>NSHighResolutionCapable</key><true/>

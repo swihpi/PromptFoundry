@@ -4,6 +4,7 @@ import SwiftUI
 struct VersionBrowserView: View {
     @ObservedObject var viewModel: WorkspaceViewModel
     @State private var selectedVersionID: UUID?
+    @State private var compare = true
 
     var body: some View {
         NavigationSplitView {
@@ -31,11 +32,22 @@ struct VersionBrowserView: View {
                             .disabled(version.draft == nil)
                     }
                     Divider()
+                    Toggle("Compare with current prompt", isOn: $compare)
+                    if compare {
+                        Text("Red − removed from the selected version · Blue + added in the current prompt").font(.caption).foregroundStyle(.secondary)
+                    }
                     ScrollView {
-                        Text(version.draft?.professionalPrompt ?? "This saved version could not be decoded.")
-                            .font(.body.monospaced())
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        if compare, let prior = version.draft?.professionalPrompt {
+                            VStack(alignment: .leading, spacing: 4) {
+                                ForEach(Array(PromptComparison.lines(before: prior, after: viewModel.draft.professionalPrompt).enumerated()), id: \.offset) { _, line in
+                                    Text(line.text).foregroundStyle(line.kind == .removed ? Color.red : line.kind == .added ? Color.cyan : Color.secondary)
+                                        .frame(maxWidth: .infinity, alignment: .leading).textSelection(.enabled)
+                                }
+                            }.font(.system(size: 14, design: .monospaced))
+                        } else {
+                            Text(version.draft?.professionalPrompt ?? "This saved version could not be decoded.")
+                                .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }
                 }
                 .padding(20)
@@ -44,6 +56,7 @@ struct VersionBrowserView: View {
             }
         }
         .frame(width: 820, height: 560)
+        .toolbar { Button("Done") { viewModel.showVersionBrowser = false } }
         .onAppear { selectedVersionID = versions.first?.id }
     }
 

@@ -1,10 +1,12 @@
-PromptFoundry 1.0.1
+PromptFoundry V2 2.0.0
 
-1. Drag PromptFoundry to Applications.
-2. Open PromptFoundry from Finder.
-3. Because this community build is unsigned and unnotarized, macOS may block the first launch. If it does, Control-click PromptFoundry, choose Open, and confirm Open.
+1. Drag PromptFoundry-V2 to Applications.
+2. Open PromptFoundry-V2 from Finder. The original PromptFoundry remains separate.
+3. This build has no Apple Developer ID signature and is not notarized. If macOS blocks it, try Control-click > Open. On recent macOS versions, go to System Settings > Privacy & Security > Security > Open Anyway after the first blocked launch, authenticate, and confirm Open. Do not disable Gatekeeper globally.
 4. Complete the first-launch assistant to locate the Codex CLI, verify your own Codex account, and choose a projects folder.
 
 PromptFoundry contains no developer API key, Codex token, account, or personal computer path. Codex authentication is owned by the Codex CLI installed on your Mac. PromptFoundry continues to use the local Codex app-server integration.
 
 This build is independent software and is not affiliated with or endorsed by OpenAI.
+
+V2 uses separate preferences and prompt storage. On first launch it copies an existing V1 library without saving changes to the V1 store. The libraries do not synchronize afterwards.

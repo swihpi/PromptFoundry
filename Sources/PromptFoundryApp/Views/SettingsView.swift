@@ -40,11 +40,7 @@ struct SettingsView: View {
             Section("Defaults") {
                 Picker("Target", selection: $targetRaw) { ForEach(PromptTarget.allCases) { Text($0.rawValue).tag($0.rawValue) } }
                 Toggle("Save meaningful edits automatically", isOn: $automaticSave)
-                Picker("Appearance", selection: $appearance) {
-                    Text("System").tag("system")
-                    Text("Light").tag("light")
-                    Text("Dark").tag("dark")
-                }
+                LabeledContent("Appearance", value: "Dark · V2 editorial theme")
             }
             Section("Local History") {
                 LabeledContent("Database") { Text(appModel.persistence.storeURL?.path ?? "Temporary in-memory store").lineLimit(1).truncationMode(.middle) }

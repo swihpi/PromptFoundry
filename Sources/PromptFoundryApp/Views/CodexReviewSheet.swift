@@ -12,8 +12,16 @@ struct CodexReviewSheet: View {
             HStack(alignment: .top, spacing: 18) {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
-                        recommendationCard
-                        executionSettings
+                        if !viewModel.desktopHandoff {
+                            recommendationCard
+                            executionSettings
+                        } else {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Open in Codex").font(.title2.bold())
+                                Text("PromptFoundry sends the complete prompt and working directory. Choose the model, reasoning and permissions inside Codex before submitting.")
+                                Text("The handoff opens a draft. Confirm it in Codex to start work.").foregroundStyle(.secondary)
+                            }.padding(14)
+                        }
                         directoryCard
                     }
                     .padding(2)
@@ -31,7 +39,7 @@ struct CodexReviewSheet: View {
                     Text("This is the exact prompt Codex will receive.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    ReadOnlyPromptTextView(text: viewModel.draft.professionalPrompt)
+                    ReadOnlyPromptTextView(text: viewModel.handoffPrompt)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(.background.opacity(0.65), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(.separator.opacity(0.45)))
@@ -70,7 +78,7 @@ struct CodexReviewSheet: View {
             .frame(width: 44, height: 44)
             VStack(alignment: .leading, spacing: 3) {
                 Text("Review Codex Handoff").font(.title2.weight(.semibold))
-                Text("Run opens a new Codex-owned chat with this prompt and working directory.")
+                Text(viewModel.desktopHandoff ? "Review the prompt and folder before opening a draft in Codex." : "Create an app-server task using the execution settings below.")
                     .foregroundStyle(.secondary)
             }
             Spacer()
@@ -178,9 +186,7 @@ struct CodexReviewSheet: View {
             if isSubmitting { ProgressView().controlSize(.small) }
             Button("Cancel") { viewModel.showCodexReview = false }
                 .keyboardShortcut(.cancelAction)
-            Button("Create Task") { submit(run: false) }
-                .disabled(isSubmitting)
-            Button("Run in Codex") { submit(run: true) }
+            Button(viewModel.desktopHandoff ? "Run in Codex" : "Create Task") { submit(run: viewModel.desktopHandoff) }
                 .buttonStyle(.borderedProminent)
                 .disabled(isSubmitting)
                 .keyboardShortcut(.defaultAction)
@@ -205,7 +211,7 @@ struct CodexReviewSheet: View {
     }
 
     private var promptWordCount: Int {
-        viewModel.draft.professionalPrompt.split(whereSeparator: \.isWhitespace).count
+        viewModel.handoffPrompt.split(whereSeparator: \.isWhitespace).count
     }
 
     private func modelName(_ id: String) -> String {

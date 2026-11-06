@@ -34,5 +34,14 @@ final class AppModel: ObservableObject {
         self.persistenceStartupError = startupError
         self.workspace = WorkspaceViewModel(library: library, codexRefiner: codex, apiRefiner: apiRefiner, credentials: keychain, codex: codex)
         if let startupError { workspace.presentError(startupError) }
+        if startupError == nil, !UserDefaults.standard.bool(forKey: "legacyLibraryCopiedV2") {
+            do {
+                let count = try LegacyLibraryImporter.copyLibrary(into: library)
+                UserDefaults.standard.set(true, forKey: "legacyLibraryCopiedV2")
+                if count > 0 { workspace.showFeedback(.imported(count)) }
+            } catch {
+                workspace.presentError("Your original library could not be copied automatically. It remains in PromptFoundry; use Export Library there and Import Library in V2. \(error.localizedDescription)")
+            }
+        }
     }
 }

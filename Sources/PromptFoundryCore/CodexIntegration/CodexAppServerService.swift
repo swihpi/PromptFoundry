@@ -335,7 +335,7 @@ final class AppServerProcess: @unchecked Sendable {
         let output = Pipe()
         let errors = Pipe()
         newProcess.executableURL = executableURL
-        newProcess.arguments = ["app-server", "--stdio"]
+        newProcess.arguments = ["app-server"] // Uses the CLI's default stdio transport.
         newProcess.standardInput = input
         newProcess.standardOutput = output
         newProcess.standardError = errors

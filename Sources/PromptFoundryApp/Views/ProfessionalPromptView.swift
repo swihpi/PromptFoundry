@@ -8,11 +8,11 @@ struct ProfessionalPromptView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
+                    // Match the left selector row, editor label and their spacing.
+                    primaryActions.frame(height: 83, alignment: .top)
                     promptEditor
-                    primaryActions
                     refinementActions
                     metadataSections
                     codexConfiguration
@@ -20,17 +20,13 @@ struct ProfessionalPromptView: View {
                 .padding(18)
             }
         }
-        .background {
-            LinearGradient(colors: [FoundryStyle.warmAccent.opacity(0.025), .clear, FoundryStyle.accent.opacity(0.045)], startPoint: .topTrailing, endPoint: .bottomLeading)
-                .background(.background)
-        }
     }
 
     private var header: some View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 3) {
-                Label("Professional Prompt", systemImage: "checkmark.seal")
-                    .font(.headline)
+                Text("Professional Prompt")
+                    .font(.system(size: 32, weight: .bold))
                 Text(statusText)
                     .font(.caption)
                     .foregroundStyle(statusColor)
@@ -39,13 +35,13 @@ struct ProfessionalPromptView: View {
             if viewModel.generationState == .generating {
                 ProgressView().controlSize(.small).accessibilityLabel("Generating professional prompt")
             }
-            DepthBadge(depth: viewModel.promptDepth)
             Button { viewModel.showVersionBrowser = true } label: { Label("Versions", systemImage: "clock.arrow.circlepath") }
                 .disabled(viewModel.selectedRecord?.versions.isEmpty != false)
                 .help("Browse previous prompt versions")
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 13)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 22)
+        .frame(height: 116, alignment: .top)
     }
 
     private var promptEditor: some View {
@@ -62,19 +58,21 @@ struct ProfessionalPromptView: View {
                 .padding(18)
                 .allowsHitTesting(false)
             }
-            TextEditor(text: $viewModel.draft.professionalPrompt)
-                .font(.body.monospaced())
+            TextEditor(text: viewModel.generationState == .generating ? .constant(viewModel.pendingPrompt) : $viewModel.draft.professionalPrompt)
+                .font(.system(size: 16))
                 .scrollContentBackground(.hidden)
                 .padding(8)
                 .focused($promptFocused)
                 .accessibilityLabel("Professional prompt editor")
+                .disabled(viewModel.generationState == .generating)
         }
-        .frame(minHeight: 330)
+        .frame(height: 280)
         .shadow(color: .black.opacity(0.045), radius: 10, y: 4)
     }
 
     private var primaryActions: some View {
-        HStack(spacing: 9) {
+        VStack(alignment: .leading, spacing: 12) {
+          HStack(spacing: 12) {
             Button { viewModel.copyPrompt() } label: { Label("Copy", systemImage: "doc.on.doc") }
                 .disabled(!viewModel.canUsePrompt)
             Button { viewModel.save() } label: { Label("Save", systemImage: "square.and.arrow.down") }
@@ -84,38 +82,57 @@ struct ProfessionalPromptView: View {
                 Button("Plain Text") { export(markdown: false) }
             } label: { Label("Export", systemImage: "square.and.arrow.up") }
             .disabled(!viewModel.canUsePrompt)
-            Spacer()
-            Button { viewModel.prepareCodexReview() } label: { Label("Create Codex Task", systemImage: "plus.square.on.square") }
+          }
+          HStack(spacing: 12) {
+            Button { viewModel.prepareCodexReview(desktop: false) } label: { Label("Create Codex Task", systemImage: "plus.square.on.square") }
                 .disabled(!viewModel.canUsePrompt)
             Button { viewModel.prepareCodexReview() } label: { Label("Run in Codex", systemImage: "play.fill") }
                 .buttonStyle(.borderedProminent)
                 .disabled(!viewModel.canUsePrompt)
+          }
         }
         .controlSize(.regular)
-        .padding(12)
-        .foundrySurface()
     }
 
     private var refinementActions: some View {
-        GroupBox("Shape the Prompt") {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Shape the Prompt").font(.caption.weight(.medium)).foregroundStyle(.secondary)
+            ViewThatFits(in: .horizontal) {
+              refinementRow
+              LazyVGrid(columns: [GridItem(.adaptive(minimum: 135))], alignment: .leading, spacing: 8) {
                 refinementButton("Regenerate", icon: "arrow.clockwise", mode: .regenerate)
                 refinementButton("Improve", icon: "sparkles", mode: .improve)
                 refinementButton("Shorter", icon: "text.badge.minus", mode: .shorter)
                 refinementButton("More Detail", icon: "text.badge.plus", mode: .detailed)
                 refinementButton("Keep My Voice", icon: "quote.bubble", mode: .preserveWording)
+              }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 4)
         }
     }
 
+    private var refinementRow: some View {
+        HStack(spacing: 8) {
+            refinementButton("Regenerate", icon: "arrow.clockwise", mode: .regenerate)
+            refinementButton("Improve", icon: "sparkles", mode: .improve)
+            refinementButton("Shorter", icon: "text.badge.minus", mode: .shorter)
+            refinementButton("More Detail", icon: "text.badge.plus", mode: .detailed)
+            refinementButton("Keep My Voice", icon: "quote.bubble", mode: .preserveWording)
+        }
+    }
+
     private var metadataSections: some View {
         VStack(spacing: 8) {
+          LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 8) {
             MetadataDisclosure(title: "What Was Added", icon: "plus.circle", values: viewModel.draft.additions)
             MetadataDisclosure(title: "Assumptions Made", icon: "questionmark.diamond", values: viewModel.draft.assumptions)
             MetadataDisclosure(title: "Missing Information", icon: "ellipsis.bubble", values: viewModel.draft.missingInformation)
             MetadataDisclosure(title: "Questions Worth Answering", icon: "questionmark.bubble", values: viewModel.draft.questions)
+          }
+            if !viewModel.draft.questions.isEmpty || !viewModel.draft.missingInformation.isEmpty {
+                ClarificationAnswersView(viewModel: viewModel)
+            }
             MetadataDisclosure(title: "Potential Risks or Ambiguities", icon: "exclamationmark.triangle", values: viewModel.draft.riskFlags, isRisk: true)
         }
     }
@@ -123,6 +140,8 @@ struct ProfessionalPromptView: View {
     private var codexConfiguration: some View {
         DisclosureGroup {
             VStack(spacing: 12) {
+                Text("These settings apply to Create Codex Task. Run in Codex uses the model, reasoning and permissions selected inside Codex.")
+                    .font(.callout).foregroundStyle(.secondary)
                 ModelConfigurationView(
                     title: "Codex execution model",
                     model: $viewModel.draft.codexModel,
@@ -208,7 +227,7 @@ private struct MetadataDisclosure: View {
             }
             .font(.subheadline.weight(.medium))
         }
-        .padding(11)
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .padding(.vertical, 12)
+        .overlay(alignment: .bottom) { Divider() }
     }
 }

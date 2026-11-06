@@ -20,7 +20,7 @@ final class WorkspaceViewModel: ObservableObject {
             case .copied: return "Copied"
             case .saved: return "Saved"
             case .created(let id): return "Codex task created: \(id)"
-            case .openedInCodex: return "New Codex chat opened"
+            case .openedInCodex: return "Sent to Codex — confirm the new task there"
             case .imported(let count): return "Imported \(count) prompt\(count == 1 ? "" : "s")"
             case .exported: return "Export complete"
             }
@@ -38,6 +38,10 @@ final class WorkspaceViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var rawFailedResponse: String?
     @Published var showCodexReview = false
+    @Published var desktopHandoff = true
+    @Published var pendingPrompt = ""
+    @Published var clarificationAnswers: [String: String] = [:]
+    @Published var contextFileIDs: Set<UUID> = []
     @Published var showDeleteAllConfirmation = false
     @Published var showVersionBrowser = false
     @Published var codexStatus = CodexConnectionStatus.checking
@@ -58,6 +62,7 @@ final class WorkspaceViewModel: ObservableObject {
     private var feedbackTask: Task<Void, Never>?
     private var loadingDraft = false
     private var handoffProjectID = UUID()
+    private var hasLiveCodexModels = false
 
     init(library: PromptLibraryStore, codexRefiner: PromptRefining, apiRefiner: PromptRefining, credentials: CredentialStoring, codex: CodexServicing) {
         self.library = library
@@ -84,7 +89,12 @@ final class WorkspaceViewModel: ObservableObject {
         !draft.originalIdea.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && generationState != .generating
     }
 
-    var canUsePrompt: Bool { !draft.professionalPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+    var canUsePrompt: Bool { generationState != .generating && !draft.professionalPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
+    var handoffPrompt: String {
+        guard !draft.attachments.isEmpty else { return draft.professionalPrompt }
+        return draft.professionalPrompt + "\n\n## Referenced local files\nThese are file references, not uploaded attachments. Inspect them only as needed for this task and within your granted permissions.\n" + draft.attachments.map { "- \($0.displayName): \($0.path)" }.joined(separator: "\n")
+    }
 
     var wordCount: Int {
         draft.originalIdea.split(whereSeparator: \ .isWhitespace).count
@@ -103,9 +113,12 @@ final class WorkspaceViewModel: ObservableObject {
 
     func newPrompt() {
         stopGeneration()
+        clarificationAnswers = [:]
+        contextFileIDs = []
         loadingDraft = true
         selectedID = nil
         draft = Self.defaultDraft()
+        normalizeRefinerModel()
         handoffProjectID = UUID()
         codexWorkingDirectory = ""
         directoryRecommendation = nil
@@ -118,9 +131,12 @@ final class WorkspaceViewModel: ObservableObject {
 
     func select(_ record: PromptRecord) {
         stopGeneration()
+        clarificationAnswers = [:]
+        contextFileIDs = []
         loadingDraft = true
         selectedID = record.id
         draft = record.makeDraft()
+        normalizeRefinerModel()
         handoffProjectID = record.id
         codexWorkingDirectory = ""
         directoryRecommendation = nil
@@ -139,10 +155,29 @@ final class WorkspaceViewModel: ObservableObject {
         rawFailedResponse = nil
         generationState = .generating
         let originalProfessionalPrompt = draft.professionalPrompt
-        if mode == .generate || mode == .regenerate { draft.professionalPrompt = "" }
+        pendingPrompt = ""
+        let sourceDraft = draft
+        var context = draft.additionalContext
+        do {
+            for file in draft.attachments where contextFileIDs.contains(file.id) {
+                let url = URL(fileURLWithPath: file.path)
+                let accessed = url.startAccessingSecurityScopedResource()
+                defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+                context += "\n\n" + (try FileContextReader.read(url))
+                guard context.utf8.count <= 256_000 else {
+                    throw PromptFoundryError.codexUnavailable("Selected file context exceeds 256 KB. Use fewer files or smaller excerpts.")
+                }
+            }
+            let record = try library.save(draft: sourceDraft, existingID: selectedID)
+            selectedID = record.id
+        } catch {
+            generationState = .failed
+            errorMessage = error.localizedDescription
+            return
+        }
         let request = PromptRefinementRequest(
             idea: draft.originalIdea,
-            context: draft.additionalContext,
+            context: context,
             target: draft.target,
             taskType: draft.taskType,
             model: draft.refinerModel,
@@ -162,7 +197,7 @@ final class WorkspaceViewModel: ObservableObject {
                     guard !Task.isCancelled else { return }
                     switch event {
                     case .started: break
-                    case .delta(let text): draft.professionalPrompt += text
+                    case .delta(let text): pendingPrompt += text
                     case .completed(let response, _):
                         draft.professionalPrompt = response.professionalPrompt
                         draft.title = response.suggestedTitle
@@ -179,18 +214,23 @@ final class WorkspaceViewModel: ObservableObject {
                         refreshDirectoryRecommendation()
                         generationState = .completed
                         showFeedback(.saved)
+                        pendingPrompt = ""
                     }
                 }
             } catch let error as PromptFoundryError {
+                guard !Task.isCancelled else { return }
                 if case .malformedResponse(let raw) = error { rawFailedResponse = raw }
                 if error == .cancelled {
                     if draft.professionalPrompt.isEmpty { draft.professionalPrompt = originalProfessionalPrompt }
                     generationState = .idle
                 } else {
+                    draft = sourceDraft
                     generationState = .failed
                     errorMessage = error.localizedDescription
                 }
             } catch {
+                guard !Task.isCancelled else { return }
+                draft = sourceDraft
                 generationState = .failed
                 errorMessage = error.localizedDescription
             }
@@ -200,6 +240,7 @@ final class WorkspaceViewModel: ObservableObject {
     func stopGeneration() {
         generationTask?.cancel()
         generationTask = nil
+        pendingPrompt = ""
         if generationState == .generating { generationState = .idle }
     }
 
@@ -275,11 +316,21 @@ final class WorkspaceViewModel: ObservableObject {
 
     func removeAttachment(_ reference: PromptFileReference) { draft.attachments.removeAll { $0.id == reference.id } }
 
-    func prepareCodexReview() {
+    func prepareCodexReview(desktop: Bool = true) {
         guard canUsePrompt else { return }
+        desktopHandoff = desktop
         if codexRecommendation == nil { recommendCodexConfiguration(apply: true) }
         refreshDirectoryRecommendation()
         showCodexReview = true
+    }
+
+    func applyClarificationAnswers() {
+        let answered = clarificationAnswers.sorted { $0.key < $1.key }
+            .filter { !$0.value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        guard !answered.isEmpty else { return }
+        draft.additionalContext += "\n\nClarifications supplied by the user:\n" + answered.map { "Q: \($0.key)\nA: \($0.value)" }.joined(separator: "\n\n")
+        clarificationAnswers = [:]
+        generate(mode: .improve)
     }
 
     func createCodexTask(run: Bool) async {
@@ -288,7 +339,7 @@ final class WorkspaceViewModel: ObservableObject {
         }
         let directory = codexWorkingDirectory.trimmingCharacters(in: .whitespacesAndNewlines)
         let request = CodexTaskRequest(
-            prompt: draft.professionalPrompt,
+            prompt: handoffPrompt,
             workingDirectory: directory,
             model: draft.codexModel,
             reasoning: draft.codexEffort,
@@ -320,8 +371,17 @@ final class WorkspaceViewModel: ObservableObject {
         isRefreshingModels = true
         codexStatus = await codex.connectionStatus()
         if codexStatus.isConnected, let models = try? await codex.availableModels(), !models.isEmpty {
+            hasLiveCodexModels = true
             codexModels = models
-            if refinementProvider == .codex { refinerModels = models }
+            if refinementProvider == .codex {
+                refinerModels = models
+                if !models.contains(where: { $0.id == draft.refinerModel && $0.available }),
+                   let replacement = models.first(where: { $0.tier == .balanced && $0.available }) ?? models.first(where: { $0.available }) {
+                    draft.refinerModel = replacement.id
+                    draft.refinerTier = replacement.tier
+                    draft.refinerEffort = replacement.supportedEfforts.contains(.medium) ? .medium : (replacement.supportedEfforts.first ?? .low)
+                }
+            }
             if canUsePrompt, codexRecommendation == nil { recommendCodexConfiguration(apply: true) }
         }
         if refinementProvider == .openAIAPI {
@@ -334,6 +394,15 @@ final class WorkspaceViewModel: ObservableObject {
     var refinementProvider: RefinementProvider {
         UserDefaults.standard.string(forKey: SettingsKeys.refinementProvider)
             .flatMap(RefinementProvider.init(rawValue:)) ?? .codex
+    }
+
+    private func normalizeRefinerModel() {
+        guard hasLiveCodexModels, refinementProvider == .codex,
+              !codexModels.contains(where: { $0.id == draft.refinerModel && $0.available }),
+              let model = codexModels.first(where: { $0.tier == .balanced && $0.available }) ?? codexModels.first(where: { $0.available }) else { return }
+        draft.refinerModel = model.id
+        draft.refinerTier = model.tier
+        draft.refinerEffort = model.supportedEfforts.contains(.medium) ? .medium : (model.supportedEfforts.first ?? .low)
     }
 
     func presentError(_ message: String) { errorMessage = message }

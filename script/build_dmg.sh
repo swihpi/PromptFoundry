@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_NAME="PromptFoundry"
+APP_NAME="PromptFoundry-V2"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_DIR="$ROOT_DIR/dist"
 APP_BUNDLE="$DIST_DIR/$APP_NAME.app"
 DMG_ROOT="$DIST_DIR/dmg-root"
-DMG_PATH="$DIST_DIR/$APP_NAME-1.0.1-unsigned.dmg"
+DMG_PATH="$DIST_DIR/$APP_NAME-2.0.0-unsigned.dmg"
 
 "$ROOT_DIR/script/build_and_run.sh" --build-only
 

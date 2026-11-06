@@ -10,12 +10,12 @@ struct RoughIdeaView: View {
     var body: some View {
         VStack(spacing: 0) {
             paneHeader
-            Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    selectors
-                    depthControl
+                    selectors.frame(height: 40)
                     ideaEditor
+                    depthControl
+                    Divider()
                     contextSection
                     attachmentsSection
                     tagsSection
@@ -24,11 +24,8 @@ struct RoughIdeaView: View {
                 .padding(18)
             }
         }
-        .background {
-            LinearGradient(colors: [FoundryStyle.accent.opacity(0.045), .clear, FoundryStyle.warmAccent.opacity(0.025)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                .background(.background)
-        }
         .onAppear { if viewModel.draft.originalIdea.isEmpty { ideaFocused = true } }
+        .disabled(viewModel.generationState == .generating)
         .onChange(of: viewModel.selectedID) {
             if viewModel.selectedID == nil { DispatchQueue.main.async { ideaFocused = true } }
         }
@@ -37,8 +34,8 @@ struct RoughIdeaView: View {
     private var paneHeader: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
-                Label("Rough Idea", systemImage: "lightbulb")
-                    .font(.headline)
+                Text("Rough Idea")
+                    .font(.system(size: 36, weight: .bold))
                 Spacer()
                 Text("\(viewModel.wordCount) words · \(viewModel.characterCount) characters")
                     .font(.caption)
@@ -46,11 +43,12 @@ struct RoughIdeaView: View {
             }
             TextField("Prompt title", text: $viewModel.draft.title)
                 .textFieldStyle(.plain)
-                .font(.title3.weight(.semibold))
+                .font(.system(size: 15, weight: .medium))
                 .accessibilityLabel("Prompt title")
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 13)
+        .padding(.horizontal, 24)
+        .padding(.vertical, 22)
+        .frame(height: 116, alignment: .top)
     }
 
     private var selectors: some View {
@@ -110,20 +108,24 @@ struct RoughIdeaView: View {
                 }
                 Spacer()
                 Text("Exhaustive").font(.caption2).foregroundStyle(.tertiary)
+                Button { viewModel.generate() } label: { Label("Generate Prompt", systemImage: "wand.and.stars") }
+                    .buttonStyle(.borderedProminent).controlSize(.large).disabled(!viewModel.canGenerate)
             }
-            Text(depthDescription)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(14)
-        .foundrySurface()
+        .help(depthDescription)
     }
 
     private var ideaEditor: some View {
         VStack(alignment: .leading, spacing: 9) {
-            Text("What do you want to accomplish?")
-                .font(.subheadline.weight(.semibold))
+            HStack {
+                Text("What do you want to accomplish?").font(.subheadline.weight(.semibold))
+                Spacer()
+                Button("Paste") { viewModel.pasteIdea() }.buttonStyle(.plain).foregroundStyle(FoundryStyle.accent)
+                Button("Clear") { viewModel.clearIdea() }.buttonStyle(.plain).foregroundStyle(FoundryStyle.accent)
+                    .disabled(viewModel.draft.originalIdea.isEmpty)
+            }
+            .frame(height: 20)
             ZStack(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(.background.secondary)
@@ -136,26 +138,16 @@ struct RoughIdeaView: View {
                         .allowsHitTesting(false)
                 }
                 TextEditor(text: $viewModel.draft.originalIdea)
-                    .font(.body)
+                    .font(.system(size: 16))
                     .scrollContentBackground(.hidden)
                     .padding(7)
                     .focused($ideaFocused)
                     .accessibilityLabel("Rough idea")
             }
-            .frame(minHeight: 330)
-            HStack {
-                Button("Paste", systemImage: "doc.on.clipboard") { viewModel.pasteIdea() }
-                Button("Clear", systemImage: "xmark.circle") { viewModel.clearIdea() }
-                    .disabled(viewModel.draft.originalIdea.isEmpty)
-                Spacer()
-                Button { viewModel.generate() } label: { Label("Generate Prompt", systemImage: "wand.and.stars") }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .disabled(!viewModel.canGenerate)
-            }
+            .frame(height: 280)
+            .disabled(viewModel.generationState == .generating)
         }
         .padding(14)
-        .foundrySurface(emphasized: true)
     }
 
     private var contextSection: some View {
@@ -184,6 +176,10 @@ struct RoughIdeaView: View {
                             Text(reference.path).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                         }
                         Spacer()
+                        Toggle("Use contents", isOn: Binding(
+                            get: { viewModel.contextFileIDs.contains(reference.id) },
+                            set: { if $0 { viewModel.contextFileIDs.insert(reference.id) } else { viewModel.contextFileIDs.remove(reference.id) } }
+                        )).toggleStyle(.checkbox).help("Include UTF-8 text contents in the next AI request; up to 64 KB per file.")
                         Button { viewModel.removeAttachment(reference) } label: { Image(systemName: "xmark") }
                             .buttonStyle(.borderless)
                             .help("Remove file reference")
@@ -192,6 +188,8 @@ struct RoughIdeaView: View {
                 Button("Reference Files…", systemImage: "paperclip") {
                     viewModel.addAttachments(DesktopPanels.chooseFiles())
                 }
+                Text("References send filenames only. Select Use contents to send supported text to your refinement provider. Selection resets when you switch prompts.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
             .padding(.top, 6)
         } label: {

@@ -7,7 +7,7 @@ public final class PersistenceController {
 
     public init(inMemory: Bool = false) throws {
         let schema = Schema([PromptRecord.self, PromptVersion.self])
-        let configuration = ModelConfiguration("PromptFoundry", schema: schema, isStoredInMemoryOnly: inMemory)
+        let configuration = ModelConfiguration("PromptFoundry-V2", schema: schema, isStoredInMemoryOnly: inMemory)
         container = try ModelContainer(for: schema, configurations: [configuration])
         storeURL = inMemory ? nil : configuration.url
     }

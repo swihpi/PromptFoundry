@@ -15,6 +15,8 @@ struct HistorySidebarView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            TextField("Search prompt library", text: $viewModel.historySearch)
+                .textFieldStyle(.roundedBorder).padding(12)
             Button { viewModel.newPrompt() } label: {
                 Label("New Prompt", systemImage: "square.and.pencil")
                     .frame(maxWidth: .infinity)

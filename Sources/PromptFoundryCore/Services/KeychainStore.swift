@@ -4,7 +4,7 @@ import Security
 public final class KeychainStore: CredentialStoring {
     private let service: String
 
-    public init(service: String = "app.promptfoundry.PromptFoundry") {
+    public init(service: String = "app.promptfoundry.PromptFoundryV2") {
         self.service = service
     }
 
